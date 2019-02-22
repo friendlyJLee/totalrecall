@@ -1,0 +1,277 @@
+
+project frameworks/base/
+diff --git a/api/current.txt b/api/current.txt
+index 25e998c..af83969 100644
+--- a/api/current.txt
++++ b/api/current.txt
+@@ -41483,6 +41483,41 @@ package android.text {
+     method public abstract int getSpanTypeId();
+   }
+ 
++  public class SecureSpannableStringBuilder implements java.lang.Appendable java.lang.CharSequence android.text.Editable android.text.GetChars {
++    ctor public SecureSpannableStringBuilder();
++    ctor public SecureSpannableStringBuilder(java.lang.CharSequence);
++    ctor public SecureSpannableStringBuilder(java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence, java.lang.Object, int);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder append(char);
++    method public char charAt(int);
++    method public void clear();
++    method public void clearSpans();
++    method public android.text.SecureSpannableStringBuilder delete(int, int);
++    method public void dump();
++    method public void getChars(int, int, char[], int);
++    method public android.text.InputFilter[] getFilters();
++    method public int getSpanEnd(java.lang.Object);
++    method public int getSpanFlags(java.lang.Object);
++    method public int getSpanStart(java.lang.Object);
++    method public <T> T[] getSpans(int, int, java.lang.Class<T>);
++    method public deprecated int getTextRunCursor(int, int, int, int, int, android.graphics.Paint);
++    method public int getTextWatcherDepth();
++    method public android.text.SecureSpannableStringBuilder insert(int, java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder insert(int, java.lang.CharSequence);
++    method public int length();
++    method public int nextSpanTransition(int, int, java.lang.Class);
++    method public void removeSpan(java.lang.Object);
++    method public android.text.SecureSpannableStringBuilder replace(int, int, java.lang.CharSequence);
++    method public android.text.SecureSpannableStringBuilder replace(int, int, java.lang.CharSequence, int, int);
++    method public void setFilters(android.text.InputFilter[]);
++    method public void setSpan(java.lang.Object, int, int, int);
++    method public java.lang.CharSequence subSequence(int, int);
++    method public static android.text.SecureSpannableStringBuilder valueOf(java.lang.CharSequence);
++    field public int mSum;
++  }
++
+   public class Selection {
+     method public static boolean extendDown(android.text.Spannable, android.text.Layout);
+     method public static boolean extendLeft(android.text.Spannable, android.text.Layout);
+diff --git a/api/system-current.txt b/api/system-current.txt
+index 2bc8a92..3057f88 100644
+--- a/api/system-current.txt
++++ b/api/system-current.txt
+@@ -45068,6 +45068,41 @@ package android.text {
+     method public abstract int getSpanTypeId();
+   }
+ 
++  public class SecureSpannableStringBuilder implements java.lang.Appendable java.lang.CharSequence android.text.Editable android.text.GetChars {
++    ctor public SecureSpannableStringBuilder();
++    ctor public SecureSpannableStringBuilder(java.lang.CharSequence);
++    ctor public SecureSpannableStringBuilder(java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence, java.lang.Object, int);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder append(char);
++    method public char charAt(int);
++    method public void clear();
++    method public void clearSpans();
++    method public android.text.SecureSpannableStringBuilder delete(int, int);
++    method public void dump();
++    method public void getChars(int, int, char[], int);
++    method public android.text.InputFilter[] getFilters();
++    method public int getSpanEnd(java.lang.Object);
++    method public int getSpanFlags(java.lang.Object);
++    method public int getSpanStart(java.lang.Object);
++    method public <T> T[] getSpans(int, int, java.lang.Class<T>);
++    method public deprecated int getTextRunCursor(int, int, int, int, int, android.graphics.Paint);
++    method public int getTextWatcherDepth();
++    method public android.text.SecureSpannableStringBuilder insert(int, java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder insert(int, java.lang.CharSequence);
++    method public int length();
++    method public int nextSpanTransition(int, int, java.lang.Class);
++    method public void removeSpan(java.lang.Object);
++    method public android.text.SecureSpannableStringBuilder replace(int, int, java.lang.CharSequence);
++    method public android.text.SecureSpannableStringBuilder replace(int, int, java.lang.CharSequence, int, int);
++    method public void setFilters(android.text.InputFilter[]);
++    method public void setSpan(java.lang.Object, int, int, int);
++    method public java.lang.CharSequence subSequence(int, int);
++    method public static android.text.SecureSpannableStringBuilder valueOf(java.lang.CharSequence);
++    field public int mSum;
++  }
++
+   public class Selection {
+     method public static boolean extendDown(android.text.Spannable, android.text.Layout);
+     method public static boolean extendLeft(android.text.Spannable, android.text.Layout);
+diff --git a/api/test-current.txt b/api/test-current.txt
+index bbaf021..cc97d47 100644
+--- a/api/test-current.txt
++++ b/api/test-current.txt
+@@ -41759,6 +41759,41 @@ package android.text {
+     method public abstract int getSpanTypeId();
+   }
+ 
++  public class SecureSpannableStringBuilder implements java.lang.Appendable java.lang.CharSequence android.text.Editable android.text.GetChars {
++    ctor public SecureSpannableStringBuilder();
++    ctor public SecureSpannableStringBuilder(java.lang.CharSequence);
++    ctor public SecureSpannableStringBuilder(java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence, java.lang.Object, int);
++    method public android.text.SecureSpannableStringBuilder append(java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder append(char);
++    method public char charAt(int);
++    method public void clear();
++    method public void clearSpans();
++    method public android.text.SecureSpannableStringBuilder delete(int, int);
++    method public void dump();
++    method public void getChars(int, int, char[], int);
++    method public android.text.InputFilter[] getFilters();
++    method public int getSpanEnd(java.lang.Object);
++    method public int getSpanFlags(java.lang.Object);
++    method public int getSpanStart(java.lang.Object);
++    method public <T> T[] getSpans(int, int, java.lang.Class<T>);
++    method public deprecated int getTextRunCursor(int, int, int, int, int, android.graphics.Paint);
++    method public int getTextWatcherDepth();
++    method public android.text.SecureSpannableStringBuilder insert(int, java.lang.CharSequence, int, int);
++    method public android.text.SecureSpannableStringBuilder insert(int, java.lang.CharSequence);
++    method public int length();
++    method public int nextSpanTransition(int, int, java.lang.Class);
++    method public void removeSpan(java.lang.Object);
++    method public android.text.SecureSpannableStringBuilder replace(int, int, java.lang.CharSequence);
++    method public android.text.SecureSpannableStringBuilder replace(int, int, java.lang.CharSequence, int, int);
++    method public void setFilters(android.text.InputFilter[]);
++    method public void setSpan(java.lang.Object, int, int, int);
++    method public java.lang.CharSequence subSequence(int, int);
++    method public static android.text.SecureSpannableStringBuilder valueOf(java.lang.CharSequence);
++    field public int mSum;
++  }
++
+   public class Selection {
+     method public static boolean extendDown(android.text.Spannable, android.text.Layout);
+     method public static boolean extendLeft(android.text.Spannable, android.text.Layout);
+diff --git a/core/java/android/widget/TextView.java b/core/java/android/widget/TextView.java
+index 9826fa0..ceda5ce 100644
+--- a/core/java/android/widget/TextView.java
++++ b/core/java/android/widget/TextView.java
+@@ -14,6 +14,14 @@
+  * limitations under the License.
+  */
+ 
++
++ /*
++  * This is modified from original TextView in Android 8.1.0_r20
++  * It supports the secure widget for password entry.
++  * We have annotated the comments of 'CHANGED' tag in each parts we changed from the original class.
++  *
++  */
++
+ package android.widget;
+ 
+ import static android.view.accessibility.AccessibilityNodeInfo.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH;
+@@ -179,6 +187,11 @@ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.Locale;
+ 
++// CHANGED: Add for secure widget buffer
++import android.text.SecureSpannableStringBuilder;
++import android.content.BroadcastReceiver;
++import android.content.IntentFilter;
++
+ /**
+  * A user interface element that displays text to the user.
+  * To provide user-editable text, see {@link EditText}.
+@@ -408,6 +421,23 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
+ 
+     private TextUtils.TruncateAt mEllipsize;
+ 
++    // CHANGED: Clear the buffer when the app is going to locked or unlocked. 
++    private final BroadcastReceiver mIntentReceiver = new BroadcastReceiver(){
++        @Override
++        public void onReceive(Context context, Intent intent){
++            if (intent.getAction().equals(Intent.ACTION_USER_PRESENT)){
++                Log.w("TextView BroadcastReceiver", "Phone unlocked");
++                if (mText != null && mText instanceof Editable) ((Editable) mText).clear();
++            }else if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)){
++                Log.w("TextView BroadcastReceiver", "Phone locked");
++                if (mText != null && mText instanceof Editable) ((Editable) mText).clear();
++            }
++        }
++    };
++
++    private boolean mRegistered;
++
++
+     static class Drawables {
+         static final int LEFT = 0;
+         static final int TOP = 1;
+@@ -5016,6 +5046,15 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
+             }
+         }
+ 
++        // CHANGED: Going to background. Do not save password, but clear it.
++        if (mText != null && mText instanceof Editable && hasPasswordTransformationMethod()){
++            ((Editable) mText).clear();
++            Log.w("TextView onSaveInstanceState()", "TextView onSaveInstanceState()");
++            return superState;
++        }
++
++
++
+         if (freezesText || hasSelection) {
+             SavedState ss = new SavedState(superState);
+ 
+@@ -5303,7 +5342,31 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
+             needEditableForNotification = true;
+         }
+ 
+-        if (type == BufferType.EDITABLE || getKeyListener() != null
++        // CHANGED: If the entry is password, create the buffer for SecureWidget
++        if (type == BufferType.EDITABLE && hasPasswordTransformationMethod()){
++            createEditorIfNeeded();
++            mEditor.forgetUndoRedo();
++            Editable t = new SecureSpannableStringBuilder();
++            text = t;
++            setFilters(t, mFilters);
++            InputMethodManager imm = InputMethodManager.peekInstance();
++            if (imm != null) imm.restartInput(this);
++
++            // OPTIONAL CHANGE: When app is going to locked or things
++            if (mRegistered){
++                if (mText != null && mText instanceof Editable) ((Editable) mText).clear();
++                getContext().unregisterReceiver(mIntentReceiver);
++
++            }
++
++            final IntentFilter filter = new IntentFilter();
++            filter.addAction(Intent.ACTION_USER_PRESENT);
++            filter.addAction(Intent.ACTION_SCREEN_OFF);
++            getContext().registerReceiver(mIntentReceiver, filter);
++            mRegistered = true;
++
++        }
++        else if (type == BufferType.EDITABLE || getKeyListener() != null
+                 || needEditableForNotification) {
+             createEditorIfNeeded();
+             mEditor.forgetUndoRedo();
+@@ -6458,6 +6521,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
+         if (mEditor != null) mEditor.onDetachedFromWindow();
+ 
+         super.onDetachedFromWindowInternal();
++
++        // CHANGED
++        if (mRegistered) {
++            getContext().unregisterReceiver(mIntentReceiver);
++            mRegistered = false;
++        }
+     }
+ 
+     @Override
+
+project packages/apps/Settings/
+diff --git a/src/com/android/settings/wfd/WifiDisplaySettings.java b/src/com/android/settings/wfd/WifiDisplaySettings.java
+index 0d6b4dc..920afdf 100755
+--- a/src/com/android/settings/wfd/WifiDisplaySettings.java
++++ b/src/com/android/settings/wfd/WifiDisplaySettings.java
+@@ -211,9 +211,11 @@ public final class WifiDisplaySettings extends SettingsPreferenceFragment {
+         return super.onOptionsItemSelected(item);
+     }
+ 
++    // CHANGED: Fix AOSP bug
+     public static boolean isAvailable(Context context) {
+-        return context.getSystemService(Context.DISPLAY_SERVICE) != null
+-                && context.getSystemService(Context.WIFI_P2P_SERVICE) != null;
++        //return context.getSystemService(Context.DISPLAY_SERVICE) != null
++        //        && context.getSystemService(Context.WIFI_P2P_SERVICE) != null;
++        return false;
+     }
+ 
+     private void scheduleUpdate(int changes) {

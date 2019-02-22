@@ -1,0 +1,869 @@
+diff --git a/core/java/android/app/admin/PasswordMetrics.java b/core/java/android/app/admin/PasswordMetrics.java
+index 4658a47..4c0fc81 100644
+--- a/core/java/android/app/admin/PasswordMetrics.java
++++ b/core/java/android/app/admin/PasswordMetrics.java
+@@ -157,6 +157,58 @@ public class PasswordMetrics implements Parcelable {
+                 quality, length, letters, upperCase, lowerCase, numeric, symbols, nonLetter);
+     }
+ 
++    // CHANGED: to avoid string password
++    public static PasswordMetrics computeForPasswordFromBytes(@NonNull byte[] password) {
++        // Analyse the characters used
++        int letters = 0;
++        int upperCase = 0;
++        int lowerCase = 0;
++        int numeric = 0;
++        int symbols = 0;
++        int nonLetter = 0;
++        final int length = password.length;
++        for (int i = 0; i < length; i++) {
++            switch (categoryChar((char)password[i])) {
++                case CHAR_LOWER_CASE:
++                    letters++;
++                    lowerCase++;
++                    break;
++                case CHAR_UPPER_CASE:
++                    letters++;
++                    upperCase++;
++                    break;
++                case CHAR_DIGIT:
++                    numeric++;
++                    nonLetter++;
++                    break;
++                case CHAR_SYMBOL:
++                    symbols++;
++                    nonLetter++;
++                    break;
++            }
++        }
++
++        // Determine the quality of the password
++        final boolean hasNumeric = numeric > 0;
++        final boolean hasNonNumeric = (letters + symbols) > 0;
++        final int quality;
++        if (hasNonNumeric && hasNumeric) {
++            quality = DevicePolicyManager.PASSWORD_QUALITY_ALPHANUMERIC;
++        } else if (hasNonNumeric) {
++            quality = DevicePolicyManager.PASSWORD_QUALITY_ALPHABETIC;
++        } else if (hasNumeric) {
++            quality = maxLengthSequenceFromBytes(password) > MAX_ALLOWED_SEQUENCE
++                    ? DevicePolicyManager.PASSWORD_QUALITY_NUMERIC
++                    : DevicePolicyManager.PASSWORD_QUALITY_NUMERIC_COMPLEX;
++        } else {
++            quality = DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED;
++        }
++
++        return new PasswordMetrics(
++                quality, length, letters, upperCase, lowerCase, numeric, symbols, nonLetter);
++    }
++
++
+     @Override
+     public boolean equals(Object other) {
+         if (!(other instanceof PasswordMetrics)) {
+@@ -222,6 +274,39 @@ public class PasswordMetrics implements Parcelable {
+         return maxLength;
+     }
+ 
++    // CHANGED
++    public static int maxLengthSequenceFromBytes(@NonNull byte[] byteArray) {
++        if (byteArray.length == 0) return 0;
++        char previousChar = (char) byteArray[0];
++        @CharacterCatagory int category = categoryChar(previousChar); //current sequence category
++        int diff = 0; //difference between two consecutive characters
++        boolean hasDiff = false; //if we are currently targeting a sequence
++        int maxLength = 0; //maximum length of a sequence already found
++        int startSequence = 0; //where the current sequence started
++        for (int current = 1; current < byteArray.length; current++) {
++            char currentChar = (char) byteArray[current];
++            @CharacterCatagory int categoryCurrent = categoryChar(currentChar);
++            int currentDiff = (int) currentChar - (int) previousChar;
++            if (categoryCurrent != category || Math.abs(currentDiff) > maxDiffCategory(category)) {
++                maxLength = Math.max(maxLength, current - startSequence);
++                startSequence = current;
++                hasDiff = false;
++                category = categoryCurrent;
++            }
++            else {
++                if(hasDiff && currentDiff != diff) {
++                    maxLength = Math.max(maxLength, current - startSequence);
++                    startSequence = current - 1;
++                }
++                diff = currentDiff;
++                hasDiff = true;
++            }
++            previousChar = currentChar;
++        }
++        maxLength = Math.max(maxLength, byteArray.length - startSequence);
++        return maxLength;
++    }
++
+     @Retention(RetentionPolicy.SOURCE)
+     @IntDef({CHAR_UPPER_CASE, CHAR_LOWER_CASE, CHAR_DIGIT, CHAR_SYMBOL})
+     private @interface CharacterCatagory {}
+diff --git a/core/java/com/android/internal/widget/ILockSettings.aidl b/core/java/com/android/internal/widget/ILockSettings.aidl
+index ee16ab6..0b67c76 100644
+--- a/core/java/com/android/internal/widget/ILockSettings.aidl
++++ b/core/java/com/android/internal/widget/ILockSettings.aidl
+@@ -32,6 +32,12 @@ interface ILockSettings {
+     void resetKeyStore(int userId);
+     VerifyCredentialResponse checkCredential(in String credential, int type, int userId,
+             in ICheckCredentialProgressCallback progressCallback);
++
++    // CHANGED: New interface API to avoid String password
++    VerifyCredentialResponse checkCredentialFromBytes(in byte [] credential, int type, int userId,
++            in ICheckCredentialProgressCallback progressCallback);
++
++    byte [] computePasswordToken(inout byte [] credentialBytes, int userId); 
+     VerifyCredentialResponse verifyCredential(in String credential, int type, long challenge, int userId);
+     VerifyCredentialResponse verifyTiedProfileChallenge(String credential, int type, long challenge, int userId);
+     boolean checkVoldPassword(int userId);
+diff --git a/core/java/com/android/internal/widget/LockPatternChecker.java b/core/java/com/android/internal/widget/LockPatternChecker.java
+index 586ece0..43fee60 100644
+--- a/core/java/com/android/internal/widget/LockPatternChecker.java
++++ b/core/java/com/android/internal/widget/LockPatternChecker.java
+@@ -253,4 +253,47 @@ public final class LockPatternChecker {
+         task.execute();
+         return task;
+     }
++
++    // CHANGED
++    public AsyncTask<?, ?, ?> checkPasswordFromBytes(final LockPatternUtils utils,
++            byte[] password,
++            final int userId,
++            final OnCheckCallback callback) {
++
++        AsyncTask<Void, Void, Boolean> task = new AsyncTask<Void, Void, Boolean>() {
++            private int mThrottleTimeout;
++
++            @Override
++            protected Boolean doInBackground(Void... args) {
++                try {
++
++                    Boolean b = utils.checkPasswordFromBytes(password, userId, callback::onEarlyMatched);
++                    synchronized(password){
++                        for (int i =0 ; i < password.length; i++) password[i] = 0;
++                    }
++                //Log.e("LockPatternChecker:task:doInBackground", "password[0] = " + password[0]);
++                //pW.clearPassword();
++                    return b;
++                    
++                } catch (RequestThrottledException ex) {
++                    mThrottleTimeout = ex.getTimeoutMs();
++                    return false;
++                }
++            }
++
++            @Override
++            protected void onPostExecute(Boolean result) {
++                //Log.e("LockPatternChecker", "bb[0] = " + bb[0]);
++                callback.onChecked(result, mThrottleTimeout);
++            }
++
++            @Override
++            protected void onCancelled() {
++                callback.onCancelled();
++            }
++        };
++        task.execute();
++        return task;
++    }
++
+ }
+diff --git a/core/java/com/android/internal/widget/LockPatternUtils.java b/core/java/com/android/internal/widget/LockPatternUtils.java
+index 5439906..c9d293e 100644
+--- a/core/java/com/android/internal/widget/LockPatternUtils.java
++++ b/core/java/com/android/internal/widget/LockPatternUtils.java
+@@ -376,6 +376,28 @@ public class LockPatternUtils {
+         }
+     }
+ 
++    // CHANGED: new method for avoiding String password
++    private boolean checkCredentialFromBytes(byte [] credential, int type, int userId,
++            @Nullable CheckCredentialProgressCallback progressCallback)
++            throws RequestThrottledException {
++        try {
++            VerifyCredentialResponse response = getLockSettings().checkCredentialFromBytes(credential, type,
++                    userId, wrapCallback(progressCallback));
++
++            if (response.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK) {
++                return true;
++            } else if (response.getResponseCode() == VerifyCredentialResponse.RESPONSE_RETRY) {
++                throw new RequestThrottledException(response.getTimeout());
++            } else {
++                return false;
++            }
++        } catch (RemoteException re) {
++            return false;
++        }
++    }
++
++
++
+     /**
+      * Check to see if a pattern matches the saved pattern.
+      * If pattern matches, return an opaque attestation that the challenge
+@@ -486,6 +508,27 @@ public class LockPatternUtils {
+         return checkCredential(password, CREDENTIAL_TYPE_PASSWORD, userId, progressCallback);
+     }
+ 
++    // CHANGED: Added method to avoid String password 
++    public boolean checkPasswordFromBytes(byte[] password, int userId) throws RequestThrottledException {
++        return checkPasswordFromBytes(password, userId, null /* progressCallback */);
++    }
++
++    // CHANGED: Added method to avoid String password 
++    public boolean checkPasswordFromBytes(byte[] password, int userId,
++            @Nullable CheckCredentialProgressCallback progressCallback)
++            throws RequestThrottledException {
++        throwIfCalledOnMainThread();
++
++        boolean b = checkCredentialFromBytes(password, CREDENTIAL_TYPE_PASSWORD, userId, progressCallback);
++        for (int i = 0; i < password.length; i++){
++            password[i] = 'a';
++        }
++        return b;
++
++    }
++
++
++
+     /**
+      * Check to see if vold already has the password.
+      * Note that this also clears vold's copy of the password.
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardAbsKeyInputView.java b/packages/SystemUI/src/com/android/keyguard/KeyguardAbsKeyInputView.java
+index abc3b94..992d5c8 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardAbsKeyInputView.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardAbsKeyInputView.java
+@@ -121,28 +121,54 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
+     protected void verifyPasswordAndUnlock() {
+         if (mDismissing) return; // already verified but haven't been dismissed; don't do it again.
+ 
+-        final String entry = getPasswordText();
++        // CHANGE: change this bad practice of using password
++        // Applying KeyExporter idea here.
++        // Creating derive key and sanitazing password, and passwing derive key instead of password
++
++        // final String entry = getPasswordText();
++
++
++        byte [] entry = getPasswordBytes();
++        final int userId = KeyguardUpdateMonitor.getCurrentUser();
++
++        byte [] pwdToken;
++        try {
++            pwdToken = mLockPatternUtils.getLockSettings().computePasswordToken(entry, userId);
++        } catch(Exception e){
++            return;
++        }
++
++        for (int i =0; i<entry.length;i++) entry[i] = 0;
++        entry = null;
++
++
+         setPasswordEntryInputEnabled(false);
+         if (mPendingLockCheck != null) {
+             mPendingLockCheck.cancel(false);
+         }
+ 
+-        final int userId = KeyguardUpdateMonitor.getCurrentUser();
+-        if (entry.length() <= MINIMUM_PASSWORD_LENGTH_BEFORE_REPORT) {
+-            // to avoid accidental lockout, only count attempts that are long enough to be a
+-            // real password. This may require some tweaking.
+-            setPasswordEntryInputEnabled(true);
+-            onPasswordChecked(userId, false /* matched */, 0, false /* not valid - too short */);
+-            return;
+-        }
++        // CHANGED: To simple solution, we commented out this lines
++        //final int userId = KeyguardUpdateMonitor.getCurrentUser();
++        //if (entry.length() <= MINIMUM_PASSWORD_LENGTH_BEFORE_REPORT) {
++        //    // to avoid accidental lockout, only count attempts that are long enough to be a
++        //    // real password. This may require some tweaking.
++        //    setPasswordEntryInputEnabled(true);
++        //    onPasswordChecked(userId, false /* matched */, 0, false /* not valid - too short */);
++        //    return;
++        //}
+ 
+         if (LatencyTracker.isEnabled(mContext)) {
+             LatencyTracker.getInstance(mContext).onActionStart(ACTION_CHECK_CREDENTIAL);
+             LatencyTracker.getInstance(mContext).onActionStart(ACTION_CHECK_CREDENTIAL_UNLOCKED);
+         }
+-        mPendingLockCheck = LockPatternChecker.checkPassword(
++
++
++        // CHANGED: we send the derived key instead of password itself
++        //mPendingLockCheck = LockPatternChecker.checkPassword(
++        mPendingLockCheck = new LockPatternChecker().checkPasswordFromBytes(
+                 mLockPatternUtils,
+-                entry,
++                //entry,
++                pwdToken,
+                 userId,
+                 new LockPatternChecker.OnCheckCallback() {
+ 
+@@ -208,7 +234,11 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
+     }
+ 
+     protected abstract void resetPasswordText(boolean animate, boolean announce);
++
++    // CHANGED: we will use getPasswordBytes() instead of String version
+     protected abstract String getPasswordText();
++    protected abstract byte[] getPasswordBytes();
++
+     protected abstract void setPasswordEntryEnabled(boolean enabled);
+     protected abstract void setPasswordEntryInputEnabled(boolean enabled);
+ 
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardPasswordView.java b/packages/SystemUI/src/com/android/keyguard/KeyguardPasswordView.java
+index b6184a8..0749997 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardPasswordView.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardPasswordView.java
+@@ -38,6 +38,7 @@ import android.widget.TextView.OnEditorActionListener;
+ import com.android.internal.widget.TextViewInputDisabler;
+ 
+ import java.util.List;
++import java.util.Arrays;
+ /**
+  * Displays an alphanumeric (latin-1) key entry for the user to enter
+  * an unlock password
+@@ -61,6 +62,8 @@ public class KeyguardPasswordView extends KeyguardAbsKeyInputView
+     private Interpolator mLinearOutSlowInInterpolator;
+     private Interpolator mFastOutLinearInInterpolator;
+ 
++    // CHANGED: for password
++    private volatile byte [] mPasswordBuffer = new byte [0];
+     public KeyguardPasswordView(Context context) {
+         this(context, null);
+     }
+@@ -137,6 +140,19 @@ public class KeyguardPasswordView extends KeyguardAbsKeyInputView
+     @Override
+     public void onPause() {
+         super.onPause();
++
++        // CHANGED: onPause, removing password
++        for (int i =0 ; i < mPasswordBuffer.length; i++) mPasswordBuffer[i] = (byte)(i%256);
++        Arrays.fill(mPasswordBuffer, (byte)10);
++
++        if (mPasswordEntry.getText() instanceof Editable){
++            ((Editable)(mPasswordEntry.getText())).clear();
++            mPasswordEntry.setText("");
++            // Optional: For experiemnt. note. usually GC is called when the app is going to the BG. 
++            //Log.e("KeyguardPasswordView", "call GC()");
++            Runtime.getRuntime().gc();
++        }
++
+         mImm.hideSoftInputFromWindow(getWindowToken(), 0);
+     }
+ 
+@@ -228,7 +244,21 @@ public class KeyguardPasswordView extends KeyguardAbsKeyInputView
+ 
+     @Override
+     protected void resetPasswordText(boolean animate, boolean announce) {
+-        mPasswordEntry.setText("");
++
++        // CHANGED: Secure deletion for apssword
++        // mPasswordEntry.setText("");
++
++        for (int i =0; i < mPasswordBuffer.length; i++) {
++            mPasswordBuffer[i] = (byte)(i%256);
++        }
++        Arrays.fill(mPasswordBuffer, (byte)10);
++        if (mPasswordEntry.getText() instanceof Editable){
++            ((Editable)(mPasswordEntry.getText())).clear();
++            mPasswordEntry.setText("");
++            // Optional: For experiemnt. note. usually GC is called when the app is going to the BG. 
++            //Log.e("KeyguardPasswordView", "call GC()");
++            Runtime.getRuntime().gc();
++        }
+     }
+ 
+     @Override
+@@ -236,6 +266,26 @@ public class KeyguardPasswordView extends KeyguardAbsKeyInputView
+         return mPasswordEntry.getText().toString();
+     }
+ 
++
++    // CHANGE: New method for avoiding String
++    @Override
++    protected byte[] getPasswordBytes() {
++        for(int i =0; i< mPasswordBuffer.length; i++) mPasswordBuffer[i] = (byte)(i%256);
++        Arrays.fill(mPasswordBuffer, (byte)10);
++
++        mPasswordBuffer = new byte [ mPasswordEntry.getText().length() ];
++        byte[] b = new byte [ mPasswordEntry.getText().length() ];
++        for (int i = 0; i < mPasswordEntry.getText().length(); i++){
++            b[i] = (byte) mPasswordEntry.getText().charAt(i);
++        }
++
++        if (mPasswordEntry.getText() instanceof Editable){
++            ((Editable)(mPasswordEntry.getText())).clear();
++            mPasswordEntry.setText("");
++        }
++        return b;
++    }
++
+     @Override
+     protected void setPasswordEntryEnabled(boolean enabled) {
+         mPasswordEntry.setEnabled(enabled);
+@@ -357,6 +407,9 @@ public class KeyguardPasswordView extends KeyguardAbsKeyInputView
+                 && event.getAction() == KeyEvent.ACTION_DOWN;
+         if (isSoftImeEvent || isKeyboardEnterKey) {
+             verifyPasswordAndUnlock();
++
++            // CHANGED: Password zeroing
++            resetPasswordText(false, false);
+             return true;
+         }
+         return false;
+diff --git a/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java b/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
+index c04ae68..3d85ac8 100644
+--- a/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
++++ b/packages/SystemUI/src/com/android/keyguard/KeyguardPinBasedInputView.java
+@@ -169,6 +169,17 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView
+         return mPasswordEntry.getText();
+     }
+ 
++    // CHANGED: byte returning version
++    @Override
++    protected byte []  getPasswordBytes() {
++        byte [] retVal = new byte [ mPasswordEntry.getText().length() ] ;
++        for (int i = 0; i < mPasswordEntry.getText().length(); i++){
++            retVal[i] = (byte) mPasswordEntry.getText().charAt(i);
++        }
++        return retVal;
++    }
++
++
+     @Override
+     protected void onFinishInflate() {
+         mPasswordEntry = findViewById(getPasswordTextViewId());
+diff --git a/services/core/java/com/android/server/locksettings/LockSettingsService.java b/services/core/java/com/android/server/locksettings/LockSettingsService.java
+index a1a0106..aae1d16 100644
+--- a/services/core/java/com/android/server/locksettings/LockSettingsService.java
++++ b/services/core/java/com/android/server/locksettings/LockSettingsService.java
+@@ -1526,6 +1526,34 @@ public class LockSettingsService extends ILockSettings.Stub {
+         return doVerifyCredential(credential, type, false, 0, userId, progressCallback);
+     }
+ 
++
++    // CHANGE: New method for avoiding string password usage
++    public byte [] computePasswordToken(byte [] credentialBytes, int userId) 
++    {
++        synchronized (mSpManager) {
++            try {
++            if (!isSyntheticPasswordBasedCredentialLocked(userId)) {
++                return null;
++            }
++            long handle = getSyntheticPasswordHandleLocked(userId);
++
++            return mSpManager.computePasswordTokenFromBytesAndIDAndHandle(credentialBytes, userId, handle);
++            } catch (RemoteException e){ 
++                    Slog.e(TAG, "getPasswordToken Error: ", e);
++                return null;
++                }
++        }
++    }
++
++    // CHANGE: New method for avoiding string password usage
++    public VerifyCredentialResponse checkCredentialFromBytes(byte [] credentialBytes, int type, int userId,
++            ICheckCredentialProgressCallback progressCallback) throws RemoteException {
++        checkPasswordReadPermission(userId);
++        return doVerifyCredentialFromBytes(credentialBytes, type, false, 0, userId, progressCallback);
++    }
++
++
++
+     @Override
+     public VerifyCredentialResponse verifyCredential(String credential, int type, long challenge,
+             int userId) throws RemoteException {
+@@ -1593,6 +1621,76 @@ public class LockSettingsService extends ILockSettings.Stub {
+         return response;
+     }
+ 
++    // CHANGED
++    private VerifyCredentialResponse doVerifyCredentialFromBytes(byte [] credentialBytes, int credentialType,
++            boolean hasChallenge, long challenge, int userId,
++            ICheckCredentialProgressCallback progressCallback) throws RemoteException {
++        if (credentialBytes == null || credentialBytes.length == 0 ) {
++            throw new IllegalArgumentException("Credential can't be null or empty");
++        }
++        if (userId == USER_FRP && Settings.Global.getInt(mContext.getContentResolver(),
++                Settings.Global.DEVICE_PROVISIONED, 0) != 0) {
++            Slog.e(TAG, "FRP credential can only be verified prior to provisioning.");
++            return VerifyCredentialResponse.ERROR;
++        }
++        VerifyCredentialResponse response = null;
++        response = spBasedDoVerifyCredentialFromBytes(credentialBytes, credentialType, hasChallenge, challenge,
++                userId, progressCallback);
++        // The user employs synthetic password based credential.
++        if (response != null) {
++            return response;
++        }
++
++        if (userId == USER_FRP) {
++            Slog.wtf(TAG, "Unexpected FRP credential type, should be SP based.");
++            return VerifyCredentialResponse.ERROR;
++        }
++
++        final CredentialHash storedHash = mStorage.readCredentialHash(userId);
++        if (storedHash.type != credentialType) {
++            Slog.wtf(TAG, "doVerifyCredential type mismatch with stored credential??"
++                    + " stored: " + storedHash.type + " passed in: " + credentialType);
++            return VerifyCredentialResponse.ERROR;
++        }
++
++        boolean shouldReEnrollBaseZero = storedHash.type == LockPatternUtils.CREDENTIAL_TYPE_PATTERN
++                && storedHash.isBaseZeroPattern;
++
++        String credentialToVerify;
++        if (shouldReEnrollBaseZero) {
++            // TODO
++            Slog.e(TAG, "Not supported for BaseZero");
++            return VerifyCredentialResponse.ERROR;
++            //credentialToVerify = LockPatternUtils.patternStringToBaseZero(credential);
++        } else {
++            //credentialToVerify = credential;
++            Slog.e(TAG, "Not supported for BaseZero");
++            response = VerifyCredentialResponse.ERROR;
++        }
++        Slog.e(TAG, "Not supported after routine");
++        return VerifyCredentialResponse.ERROR;
++
++/*
++        response = verifyCredential(userId, storedHash, credentialToVerify,
++                hasChallenge, challenge, progressCallback);
++
++        if (response.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK) {
++            mStrongAuth.reportSuccessfulStrongAuthUnlock(userId);
++            if (shouldReEnrollBaseZero) {
++                setLockCredentialInternal(credential, storedHash.type, credentialToVerify,
++                        DevicePolicyManager.PASSWORD_QUALITY_SOMETHING, userId);
++            }
++        }
++
++        return response;
++        */
++    }
++
++
++
++
++
++
+     @Override
+     public VerifyCredentialResponse verifyTiedProfileChallenge(String credential, int type,
+             long challenge, int userId) throws RemoteException {
+@@ -1760,6 +1858,27 @@ public class LockSettingsService extends ILockSettings.Stub {
+         });
+     }
+ 
++    // CHANGED
++    private void notifyActivePasswordMetricsAvailableFromBytes(byte [] password, @UserIdInt int userId) {
++        final PasswordMetrics metrics;
++        if (password == null) {
++            metrics = new PasswordMetrics();
++        } else {
++            metrics = PasswordMetrics.computeForPasswordFromBytes(password);
++            metrics.quality = mLockPatternUtils.getKeyguardStoredPasswordQuality(userId);
++        }
++
++        // Asynchronous to avoid dead lock
++        mHandler.post(() -> {
++            DevicePolicyManager dpm = (DevicePolicyManager)
++                    mContext.getSystemService(Context.DEVICE_POLICY_SERVICE);
++            dpm.setActivePasswordState(metrics, userId);
++        });
++        
++    }
++
++
++
+     /**
+      * Call after {@link #notifyActivePasswordMetricsAvailable} so metrics are updated before
+      * reporting the password changed.
+@@ -2153,6 +2272,84 @@ public class LockSettingsService extends ILockSettings.Stub {
+         return response;
+     }
+ 
++    
++    // CHANGE: new method to get byte type
++    private VerifyCredentialResponse spBasedDoVerifyCredentialFromBytes(byte [] userCredentialBytes, int
++            credentialType, boolean hasChallenge, long challenge, int userId,
++            ICheckCredentialProgressCallback progressCallback) throws RemoteException {
++        //if (DEBUG) Slog.d(TAG, "spBasedDoVerifyCredential: user=" + userId);
++        Slog.d(TAG, "spBasedDoVerifyCredential: user=" + userId);
++        if (credentialType == LockPatternUtils.CREDENTIAL_TYPE_NONE) {
++            userCredentialBytes = null;
++        }
++
++        final AuthenticationResult authResult;
++        VerifyCredentialResponse response;
++        synchronized (mSpManager) {
++            if (!isSyntheticPasswordBasedCredentialLocked(userId)) {
++                return null;
++            }
++            if (userId == USER_FRP) {
++                return mSpManager.verifyFrpCredentialFromBytes(getGateKeeperService(),
++                        userCredentialBytes, credentialType, progressCallback);
++            }
++
++            long handle = getSyntheticPasswordHandleLocked(userId);
++            authResult = mSpManager.unwrapPasswordBasedSyntheticPasswordFromBytes(
++                    getGateKeeperService(), handle, userCredentialBytes, userId);
++
++            if (authResult.credentialType != credentialType) {
++                Slog.e(TAG, "Credential type mismatch.");
++                return VerifyCredentialResponse.ERROR;
++            }
++            response = authResult.gkResponse;
++            // credential has matched
++            if (response.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK) {
++                // perform verifyChallenge with synthetic password which generates the real GK auth
++                // token and response for the current user
++                response = mSpManager.verifyChallenge(getGateKeeperService(), authResult.authToken,
++                        challenge, userId);
++                if (response.getResponseCode() != VerifyCredentialResponse.RESPONSE_OK) {
++                    // This shouldn't really happen: the unwrapping of SP succeeds, but SP doesn't
++                    // match the recorded GK password handle.
++                    Slog.wtf(TAG, "verifyChallenge with SP failed.");
++                    return VerifyCredentialResponse.ERROR;
++                }
++            }
++        }
++
++        if (response.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK) {
++            if (progressCallback != null) {
++                progressCallback.onCredentialVerified();
++            }
++            notifyActivePasswordMetricsAvailableFromBytes(userCredentialBytes, userId);
++            unlockKeystore(authResult.authToken.deriveKeyStorePassword(), userId);
++
++            final byte[] secret = authResult.authToken.deriveDiskEncryptionKey();
++            Slog.i(TAG, "Unlocking user " + userId + " with secret only, length " + secret.length);
++            unlockUser(userId, null, secret);
++
++
++            activateEscrowTokens(authResult.authToken, userId);
++
++            if (isManagedProfileWithSeparatedLock(userId)) {
++                TrustManager trustManager =
++                        (TrustManager) mContext.getSystemService(Context.TRUST_SERVICE);
++                trustManager.setDeviceLockedForUser(userId, false);
++            }
++            mStrongAuth.reportSuccessfulStrongAuthUnlock(userId);
++        } else if (response.getResponseCode() == VerifyCredentialResponse.RESPONSE_RETRY) {
++            if (response.getTimeout() > 0) {
++                requireStrongAuth(STRONG_AUTH_REQUIRED_AFTER_LOCKOUT, userId);
++            }
++        }
++
++        return response;
++    }
++
++
++
++
+     /**
+      * Change the user's lockscreen password by creating a new SP blob and update the handle, based
+      * on an existing authentication token. Even though a new SP blob is created, the underlying
+diff --git a/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java b/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java
+index ca6c9e7..b675f54 100644
+--- a/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java
++++ b/services/core/java/com/android/server/locksettings/SyntheticPasswordManager.java
+@@ -96,7 +96,10 @@ public class SyntheticPasswordManager {
+     private static final String WEAVER_SLOT_NAME = "weaver";
+ 
+     public static final long DEFAULT_HANDLE = 0L;
++
++    // CHANGED: Avoid string
+     private static final String DEFAULT_PASSWORD = "default-password";
++    private static final byte [] DEFAULT_PASSWORD_BYTES = new byte [] {'d', 'e', 'f', 'a', 'u', 'l', 't', '-', 'p', 'a', 's', 's', 'w', 'o', 'r', 'd'};
+ 
+     private static final byte WEAVER_VERSION = 1;
+     private static final int INVALID_WEAVER_SLOT = -1;
+@@ -647,6 +650,33 @@ public class SyntheticPasswordManager {
+         }
+     }
+ 
++    // CHANGED
++    public VerifyCredentialResponse verifyFrpCredentialFromBytes(IGateKeeperService gatekeeper,
++            byte [] userCredential, int credentialType,
++            ICheckCredentialProgressCallback progressCallback) throws RemoteException {
++        PersistentData persistentData = mStorage.readPersistentDataBlock();
++        if (persistentData.type == PersistentData.TYPE_SP) {
++            PasswordData pwd = PasswordData.fromBytes(persistentData.payload);
++            byte[] pwdToken = computePasswordTokenFromBytes(userCredential, pwd);
++
++            GateKeeperResponse response = gatekeeper.verifyChallenge(fakeUid(persistentData.userId),
++                    0 /* challenge */, pwd.passwordHandle, passwordTokenToGkInput(pwdToken));
++            return VerifyCredentialResponse.fromGateKeeperResponse(response);
++        } else if (persistentData.type == PersistentData.TYPE_SP_WEAVER) {
++            PasswordData pwd = PasswordData.fromBytes(persistentData.payload);
++            byte[] pwdToken = computePasswordTokenFromBytes(userCredential, pwd);
++            int weaverSlot = persistentData.userId;
++
++            return weaverVerify(weaverSlot, passwordTokenToWeaverKey(pwdToken)).stripPayload();
++        } else {
++            Log.e(TAG, "persistentData.type must be TYPE_SP or TYPE_SP_WEAVER, but is "
++                    + persistentData.type);
++            return VerifyCredentialResponse.ERROR;
++        }
++    }
++
++
++
+ 
+     public void migrateFrpPasswordLocked(long handle, UserInfo userInfo, int requestedQuality) {
+         if (mStorage.getPersistentDataBlock() != null
+@@ -852,6 +882,91 @@ public class SyntheticPasswordManager {
+         return result;
+     }
+ 
++    // CHANGED
++    public byte [] computePasswordTokenFromBytesAndIDAndHandle(byte [] credentialBytes, int userId, long handle){
++        if (credentialBytes == null) {
++            credentialBytes = DEFAULT_PASSWORD_BYTES;
++        }
++        PasswordData pwd = PasswordData.fromBytes(loadState(PASSWORD_DATA_NAME, handle, userId));
++        return  computePasswordTokenFromBytes(credentialBytes, pwd);
++    }
++
++    public AuthenticationResult unwrapPasswordBasedSyntheticPasswordFromBytes(IGateKeeperService gatekeeper,
++            long handle, byte [] credentialBytes, int userId) throws RemoteException {
++        if (credentialBytes == null) {
++            credentialBytes = DEFAULT_PASSWORD_BYTES;
++        }
++        AuthenticationResult result = new AuthenticationResult();
++        PasswordData pwd = PasswordData.fromBytes(loadState(PASSWORD_DATA_NAME, handle, userId));
++        result.credentialType = pwd.passwordType;
++        
++        //byte [] pwdToken = computePasswordTokenFromBytes(credentialBytes, pwd);
++        byte [] pwdToken = credentialBytes;
++        //for (int i = 0 ; i < p.length; i++) p[i] = 'z';
++
++        final byte[] applicationId;
++        final long sid;
++        int weaverSlot = loadWeaverSlot(handle, userId);
++        if (weaverSlot != INVALID_WEAVER_SLOT) {
++            // Weaver based user password
++            if (!isWeaverAvailable()) {
++                Log.e(TAG, "No weaver service to unwrap password based SP");
++                result.gkResponse = VerifyCredentialResponse.ERROR;
++                return result;
++            }
++            result.gkResponse = weaverVerify(weaverSlot, passwordTokenToWeaverKey(pwdToken));
++            if (result.gkResponse.getResponseCode() != VerifyCredentialResponse.RESPONSE_OK) {
++                return result;
++            }
++            sid = GateKeeper.INVALID_SECURE_USER_ID;
++            applicationId = transformUnderWeaverSecret(pwdToken, result.gkResponse.getPayload());
++        } else {
++            byte[] gkPwdToken = passwordTokenToGkInput(pwdToken);
++            GateKeeperResponse response = gatekeeper.verifyChallenge(fakeUid(userId), 0L,
++                    pwd.passwordHandle, gkPwdToken);
++            int responseCode = response.getResponseCode();
++            if (responseCode == GateKeeperResponse.RESPONSE_OK) {
++                result.gkResponse = VerifyCredentialResponse.OK;
++                if (response.getShouldReEnroll()) {
++                    GateKeeperResponse reenrollResponse = gatekeeper.enroll(fakeUid(userId),
++                            pwd.passwordHandle, gkPwdToken, gkPwdToken);
++                    if (reenrollResponse.getResponseCode() == GateKeeperResponse.RESPONSE_OK) {
++                        pwd.passwordHandle = reenrollResponse.getPayload();
++                        saveState(PASSWORD_DATA_NAME, pwd.toBytes(), handle, userId);
++                        synchronizeFrpPassword(pwd,
++                                pwd.passwordType == LockPatternUtils.CREDENTIAL_TYPE_PATTERN
++                                ? DevicePolicyManager.PASSWORD_QUALITY_SOMETHING
++                                : DevicePolicyManager.PASSWORD_QUALITY_ALPHANUMERIC
++                                /* TODO(roosa): keep the same password quality */,
++                                userId);
++                    } else {
++                        Log.w(TAG, "Fail to re-enroll user password for user " + userId);
++                        // continue the flow anyway
++                    }
++                }
++            } else if (responseCode == GateKeeperResponse.RESPONSE_RETRY) {
++                result.gkResponse = new VerifyCredentialResponse(response.getTimeout());
++                return result;
++            } else  {
++                result.gkResponse = VerifyCredentialResponse.ERROR;
++                return result;
++            }
++            sid = sidFromPasswordHandle(pwd.passwordHandle);
++            applicationId = transformUnderSecdiscardable(pwdToken,
++                    loadSecdiscardable(handle, userId));
++        }
++
++        result.authToken = unwrapSyntheticPasswordBlob(handle, SYNTHETIC_PASSWORD_PASSWORD_BASED,
++                applicationId, sid, userId);
++
++        // Perform verifyChallenge to refresh auth tokens for GK if user password exists.
++        result.gkResponse = verifyChallenge(gatekeeper, result.authToken, 0L, userId);
++        return result;
++    }
++
++
++
++
+     /**
+      * Decrypt a synthetic password by supplying an escrow token and corresponding token
+      * blob handle generated previously. If the decryption is successful, initiate a GateKeeper
+@@ -1093,6 +1208,15 @@ public class SyntheticPasswordManager {
+         return scrypt(password, data.salt, 1 << data.scryptN, 1 << data.scryptR, 1 << data.scryptP,
+                 PASSWORD_TOKEN_LENGTH);
+     }
++ 
++    // CHANGED
++    private byte[] computePasswordTokenFromBytes(byte [] password, PasswordData data) {
++        byte [] ret = scryptFromBytes(password, data.salt, 1 << data.scryptN, 1 << data.scryptR, 1 << data.scryptP,
++                PASSWORD_TOKEN_LENGTH);
++        return ret;
++    }
++
++
+ 
+     private byte[] passwordTokenToGkInput(byte[] token) {
+         return SyntheticPasswordCrypto.personalisedHash(PERSONALIZATION_USER_GK_AUTH, token);
+@@ -1110,10 +1234,27 @@ public class SyntheticPasswordManager {
+         return nativeSidFromPasswordHandle(handle);
+     }
+ 
++
++    // CHANGED
+     protected byte[] scrypt(String password, byte[] salt, int N, int r, int p, int outLen) {
+-        return nativeScrypt(password.getBytes(), salt, N, r, p, outLen);
++        // return nativeScrypt(password.getBytes(), salt, N, r, p, outLen);
++        byte[] bp = password.getBytes();
++        Slog.i(TAG, "Passowrd length: " + bp.length);
++        //return nativeScrypt(password.getBytes(), salt, N, r, p, outLen);
++        byte[] ret = nativeScrypt(bp, salt, N, r, p, outLen);
++        for (int i = 0; i < bp.length; i++) bp[i] = 0;
++        password = "";
++        return ret;
+     }
+ 
++    protected byte[] scryptFromBytes(byte[] bp, byte[] salt, int N, int r, int p, int outLen) {
++        Slog.i(TAG, "Passowrd length: " + bp.length);
++        //return nativeScrypt(password.getBytes(), salt, N, r, p, outLen);
++        byte[] ret = nativeScrypt(bp, salt, N, r, p, outLen);
++        return ret;
++    }
++
++
+     native long nativeSidFromPasswordHandle(byte[] handle);
+     native byte[] nativeScrypt(byte[] password, byte[] salt, int N, int r, int p, int outLen);
+ 
+diff --git a/services/core/jni/com_android_server_locksettings_SyntheticPasswordManager.cpp b/services/core/jni/com_android_server_locksettings_SyntheticPasswordManager.cpp
+index 248dedb..919aa28 100644
+--- a/services/core/jni/com_android_server_locksettings_SyntheticPasswordManager.cpp
++++ b/services/core/jni/com_android_server_locksettings_SyntheticPasswordManager.cpp
+@@ -64,6 +64,11 @@ static jbyteArray android_server_SyntheticPasswordManager_nativeScrypt(JNIEnv* e
+     int rc = crypto_scrypt((const uint8_t *)passwordPtr, passwordLen,
+                        (const uint8_t *)saltPtr, saltLen, N, r, p, (uint8_t *)retPtr,
+                        outLen);
++
++    // CHANGED: Secure deletion
++    for (int i =0; i<passwordLen; i++){
++        passwordPtr[i] = i%256;
++    }
+     env->ReleaseByteArrayElements(password, passwordPtr, JNI_ABORT);
+     env->ReleaseByteArrayElements(salt, saltPtr, JNI_ABORT);
+     env->ReleaseByteArrayElements(ret, retPtr, 0);
