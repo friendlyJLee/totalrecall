@@ -1,0 +1,70 @@
+diff -urN sampleapp1_original/app/src/main/java/com/tonikamitv/loginregister/LoginActivity.java sampleapp1_pbkdf2_keyexporter/app/src/main/java/com/tonikamitv/loginregister/LoginActivity.java
+--- sampleapp1_original/app/src/main/java/com/tonikamitv/loginregister/LoginActivity.java	2018-12-04 19:43:51.970892819 -0600
++++ sampleapp1_pbkdf2_keyexporter/app/src/main/java/com/tonikamitv/loginregister/LoginActivity.java	2018-12-04 21:45:05.682891951 -0600
+@@ -14,6 +14,8 @@
+ import org.json.JSONException;
+ import org.json.JSONObject;
+ 
++import edu.rice.seclab.keyexporter.PBKDF2KeyExporter;
++
+ public class LoginActivity extends AppCompatActivity {
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -39,7 +41,9 @@
+ 
+                 // Removed
+                 final String username = etUsername.getText().toString();
+-                final String password = etPassword.getText().toString();
++                PBKDF2KeyExporter auth = new PBKDF2KeyExporter();
++                auth.bind(etPassword);
++                auth.initWithSalt(username.getBytes());
+ 
+                 // Response received from the server
+                 Response.Listener<String> responseListener = new Response.Listener<String>() {
+@@ -72,7 +76,7 @@
+                     }
+                 };
+ 
+-                LoginRequest loginRequest = new LoginRequest(username, password, responseListener);
++                LoginRequest loginRequest = new LoginRequest(username, auth.getKey().toString(), responseListener);
+                 final RequestQueue queue = Volley.newRequestQueue(LoginActivity.this);
+                 queue.add(loginRequest);
+ 
+diff -urN sampleapp1_original/app/src/main/java/com/tonikamitv/loginregister/RegisterActivity.java sampleapp1_pbkdf2_keyexporter/app/src/main/java/com/tonikamitv/loginregister/RegisterActivity.java
+--- sampleapp1_original/app/src/main/java/com/tonikamitv/loginregister/RegisterActivity.java	2018-12-04 21:14:09.730892173 -0600
++++ sampleapp1_pbkdf2_keyexporter/app/src/main/java/com/tonikamitv/loginregister/RegisterActivity.java	2018-12-04 21:44:49.006891953 -0600
+@@ -15,6 +15,8 @@
+ import org.json.JSONException;
+ import org.json.JSONObject;
+ 
++import edu.rice.seclab.keyexporter.PBKDF2KeyExporter;
++
+ public class RegisterActivity extends AppCompatActivity {
+ 
+     @Override
+@@ -34,7 +36,10 @@
+                 final String name = etName.getText().toString();
+                 final String username = etUsername.getText().toString();
+                 final int age = Integer.parseInt(etAge.getText().toString());
+-                final String password = etPassword.getText().toString();
++
++                PBKDF2KeyExporter auth = new PBKDF2KeyExporter();
++                auth.bind(etPassword);
++                auth.initWithSalt(username.getBytes());
+ 
+                 Response.Listener<String> responseListener = new Response.Listener<String>() {
+                     @Override
+@@ -58,10 +63,10 @@
+                     }
+                 };
+ 
+-                RegisterRequest registerRequest = new RegisterRequest(name, username, age, password.toString(), responseListener);
++                RegisterRequest registerRequest = new RegisterRequest(name, username, age, auth.getKey().toString(), responseListener);
+                 RequestQueue queue = Volley.newRequestQueue(RegisterActivity.this);
+                 queue.add(registerRequest);
+             }
+         });
+     }
+-}
+\ No newline at end of file
++}
