@@ -1,0 +1,567 @@
+diff -urN ../passwdsafe-6.16.1_original/passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeNewFileFragment.java passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeNewFileFragment.java
+--- ../passwdsafe-6.16.1_original/passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeNewFileFragment.java	2018-07-07 23:31:56.000000000 -0500
++++ passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeNewFileFragment.java	2018-12-14 16:09:40.034791253 -0600
+@@ -11,7 +11,6 @@
+ import android.content.ContentResolver;
+ import android.content.Context;
+ import android.content.Intent;
+-import android.graphics.Typeface;
+ import android.net.Uri;
+ import android.os.Bundle;
+ import android.support.annotation.NonNull;
+@@ -34,14 +33,14 @@
+ import com.jefftharris.passwdsafe.lib.PasswdSafeUtil;
+ import com.jefftharris.passwdsafe.lib.view.AbstractTextWatcher;
+ import com.jefftharris.passwdsafe.lib.view.GuiUtils;
+-import com.jefftharris.passwdsafe.lib.view.TypefaceUtils;
+ import com.jefftharris.passwdsafe.util.CountedBool;
+-import com.jefftharris.passwdsafe.view.PasswordVisibilityMenuHandler;
+ import com.jefftharris.passwdsafe.view.TextInputUtils;
+ 
+ import org.pwsafe.lib.file.Owner;
+ import org.pwsafe.lib.file.PwsPassword;
+ 
++import edu.rice.seclab.keyexport.PBKDF2KeyExporter;
++
+ 
+ /**
+  * Fragment for creating a new file
+@@ -76,9 +75,17 @@
+     private TextView itsPasswordConfirm;
+     private Button itsOkBtn;
+     private final CountedBool itsBackgroundDisable = new CountedBool();
+-    private final Validator itsValidator = new Validator();
++
++    // CHANGED
++    // Validator leaves some passwords in memory. To be simple, we disabled in our patch
++    //private final Validator itsValidator = new Validator();
+     private boolean itsUseStorage = false;
+ 
++    // CHANGED
++    // For keyexporter supporting PBKDF2. You can fix it without our keyexporter. KeyExporter routine is really simple
++    //  - e.g., Generating master password, and cleaning up user input password.
++    PBKDF2KeyExporter pbkdf2Auth;
++
+     private static final String ARG_URI = "uri";
+ 
+     private static final int CREATE_DOCUMENT_REQUEST = 0;
+@@ -151,28 +158,43 @@
+                 }
+             }
+         });
+-        itsValidator.registerTextView(itsFileName);
++
++        // CHANGED
++        // Validator leaves some passwords in memory. To be simple, we disabled in our patch
++        //itsValidator.registerTextView(itsFileName);
+ 
+         Context ctx = getContext();
+         itsPasswordInput = rootView.findViewById(R.id.password_input);
+         itsPassword = rootView.findViewById(R.id.password);
+-        TypefaceUtils.setMonospace(itsPassword, ctx);
+-        itsValidator.registerTextView(itsPassword);
+-        itsPasswordInput.setTypeface(Typeface.DEFAULT);
++
++        // CHANGED
++        // Validator leaves some passwords in memory. To be simple, we disabled in our patch
++        //TypefaceUtils.setMonospace(itsPassword, ctx);
++        //itsValidator.registerTextView(itsPassword);
++        //itsPasswordInput.setTypeface(Typeface.DEFAULT);
+ 
+         itsPasswordConfirmInput =
+                 rootView.findViewById(R.id.password_confirm_input);
+         itsPasswordConfirm = rootView.findViewById(R.id.password_confirm);
+-        TypefaceUtils.setMonospace(itsPasswordConfirm, ctx);
+-        itsValidator.registerTextView(itsPasswordConfirm);
+-        itsPasswordConfirmInput.setTypeface(Typeface.DEFAULT);
+-        PasswordVisibilityMenuHandler.set(ctx, itsPassword, itsPasswordConfirm);
++
++        // CHANGED
++        // Validator leaves some passwords in memory. To be simple, we disabled in our patch
++        //TypefaceUtils.setMonospace(itsPasswordConfirm, ctx);
++        //itsValidator.registerTextView(itsPasswordConfirm);
++        //itsPasswordConfirmInput.setTypeface(Typeface.DEFAULT);
++//        PasswordVisibilityMenuHandler.set(ctx, itsPassword, itsPasswordConfirm);
++
++        // CHANGED
++        // Use our KeyExporter
++        pbkdf2Auth = new PBKDF2KeyExporter();
++        pbkdf2Auth.bind((EditText)itsPassword, (EditText)itsPasswordConfirm);
++
+ 
+         Button cancelBtn = rootView.findViewById(R.id.cancel);
+         cancelBtn.setOnClickListener(this);
+         itsOkBtn = rootView.findViewById(R.id.ok);
+         itsOkBtn.setOnClickListener(this);
+-        setValid(false);
++        //setValid(false);
+ 
+         GuiUtils.setupFormKeyboard(itsFileName, itsPasswordConfirm, itsOkBtn,
+                                    getActivity());
+@@ -192,7 +214,10 @@
+     {
+         super.onResume();
+         itsListener.updateViewFileNew();
+-        itsValidator.validate();
++
++        // CHANGED
++        // Validator leaves some passwords in memory. To be simple, we disabled in our patch
++        //itsValidator.validate();
+     }
+ 
+     @Override
+@@ -213,6 +238,13 @@
+             break;
+         }
+         case R.id.ok: {
++
++            // CHANGED
++            // Generate master password using keyexporter supporting PBKDF2.
++            // You can fix it without our keyexporter. KeyExporter routine is really simple.
++            //  - e.g., Generating master password, and cleaning up user input password.
++            pbkdf2Auth.init();
++
+             String fileName = itsFileName.getText().toString();
+             if (itsUseStorage) {
+                 Intent createIntent = new Intent(
+@@ -228,8 +260,12 @@
+ 
+                 startActivityForResult(createIntent, CREATE_DOCUMENT_REQUEST);
+              } else {
++
++
++                // CHANGED
++                // Sending master key instead of raw user input password
+                 Owner<PwsPassword> passwd =
+-                        new Owner<>(new PwsPassword(itsPassword.getText()));
++                        new Owner<>(new PwsPassword(pbkdf2Auth.getKey()));
+                 try {
+                     startTask(new NewTask(fileName, passwd.pass(), this));
+                 } finally {
+@@ -299,7 +335,8 @@
+         if (itsUseStorage) {
+             String fileName = itsFileName.getText().toString();
+             Owner<PwsPassword> passwd =
+-                    new Owner<>(new PwsPassword(itsPassword.getText()));
++                    new Owner<>(new PwsPassword(pbkdf2Auth.getKey()));
++
+             try {
+                 startTask(new NewTask(fileName, passwd.pass(), this));
+             } finally {
+@@ -376,7 +413,10 @@
+         itsPasswordInput.setEnabled(enabled);
+         itsPasswordConfirmInput.setEnabled(enabled);
+         itsBackgroundDisable.update(!enabled);
+-        itsValidator.validate();
++
++        // CHANGED
++        // Validator leaves some passwords in memory. To be simple, we disabled in our patch
++        //itsValidator.validate();
+     }
+ 
+     /**
+diff -urN ../passwdsafe-6.16.1_original/passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeOpenFileFragment.java passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeOpenFileFragment.java
+--- ../passwdsafe-6.16.1_original/passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeOpenFileFragment.java	2018-07-07 23:31:56.000000000 -0500
++++ passwdsafe/src/main/java/com/jefftharris/passwdsafe/PasswdSafeOpenFileFragment.java	2018-12-14 16:19:10.838791185 -0600
+@@ -34,6 +34,7 @@
+ import android.widget.Button;
+ import android.widget.CheckBox;
+ import android.widget.CompoundButton;
++import android.widget.EditText;
+ import android.widget.ProgressBar;
+ import android.widget.TextView;
+ 
+@@ -62,6 +63,8 @@
+ import javax.crypto.Cipher;
+ import javax.crypto.IllegalBlockSizeException;
+ 
++import edu.rice.seclab.keyexport.PBKDF2KeyExporter;
++
+ 
+ /**
+  * Fragment for opening a file
+@@ -135,7 +138,11 @@
+     private YubiState itsYubiState = YubiState.UNAVAILABLE;
+     private int itsYubiSlot = 2;
+     private boolean itsIsYubikey = false;
+-    private String itsUserPassword;
++
++    // CHANGED: Disabled itsUserPassword String value
++    //  - Problematic part: Password should not be stored in String member variable.
++//    private String itsUserPassword;
++
+     private int itsRetries = 0;
+     private Phase itsPhase = Phase.INITIAL;
+     private TextWatcher itsErrorClearingWatcher;
+@@ -145,6 +152,10 @@
+     private static final String STATE_SLOT = "slot";
+     private static final String TAG = "PasswdSafeOpenFileFragment";
+ 
++    // CHANGED
++    // For keyexporter supporting PBKDF2. You can fix it without our keyexporter. KeyExporter routine is really simple
++    //  - e.g., Generating master password, and cleaning up user input password.
++    final PBKDF2KeyExporter pbkdf2Auth = new PBKDF2KeyExporter();
+ 
+     /**
+      * Create a new instance
+@@ -195,6 +206,10 @@
+         TypefaceUtils.setMonospace(itsPasswordEdit, ctx);
+         itsPasswordEdit.setEnabled(false);
+ 
++        // CHANGED
++        // Use our KeyExporter
++        pbkdf2Auth.bind((EditText)itsPasswordEdit);
++
+         itsReadonlyCb = rootView.findViewById(R.id.read_only);
+         itsReadonlyMsg = rootView.findViewById(R.id.read_only_msg);
+         GuiUtils.setVisible(itsReadonlyMsg, false);
+@@ -378,6 +393,12 @@
+             break;
+         }
+         case R.id.ok: {
++
++            // CHANGED
++            // Generate master password using keyexporter supporting PBKDF2.
++            // You can fix it without our keyexporter. KeyExporter routine is really simple.
++            //  - e.g., Generating master password, and cleaning up user input password.
++            pbkdf2Auth.init();
+             if (itsYubikeyCb.isChecked()) {
+                 setPhase(Phase.YUBIKEY);
+             } else {
+@@ -512,7 +533,10 @@
+             break;
+         }
+         case WAITING_PASSWORD: {
+-            itsUserPassword = itsPasswordEdit.getText().toString();
++
++            // CHANGED:
++            //  - Problematic part: Password should not be stored in String member variable.
++            //itsUserPassword = itsPasswordEdit.getText().toString();
+             cancelSavedPasswordUsers();
+             break;
+         }
+@@ -671,13 +695,24 @@
+             itsSaveChange = SavePasswordChange.NONE;
+         }
+ 
++        // CHANGED: Instead of sending raw String password, we send the generated master key
++
++//        Owner<PwsPassword> passwd =
++//                new Owner<>(new PwsPassword(itsPasswordEdit.getText()));
+         Owner<PwsPassword> passwd =
+-                new Owner<>(new PwsPassword(itsPasswordEdit.getText()));
++                new Owner<>(new PwsPassword(pbkdf2Auth.getKey()));
++
++
+         try {
+             startTask(new OpenTask(passwd.pass(), readonly, this));
+         } finally {
+             passwd.close();
+         }
++
++        // CHANGED: Removing all the garbage in the Android fraemwork
++        // Optional measure.
++        // FYI, we also see Keepass2Android calls this gc() function manually after login.
++        Runtime.getRuntime().gc();
+     }
+ 
+     /**
+@@ -918,7 +953,10 @@
+         @Override
+         public String getUserPassword()
+         {
+-            return itsUserPassword;
++            // CHNAGED: This method should be disabled.
++            //          Storing the password in String object or member variable is insecure practices.
++            // return itsUserPassword;
++            return "";
+         }
+ 
+         @Override
+@@ -1249,8 +1287,12 @@
+             PasswdSafeUtil.dbginfo(itsTag, "success");
+             Cipher cipher = result.getCryptoObject().getCipher();
+             try {
+-                itsSavedPasswordsMgr.addSavedPassword(getPasswdFileUri(),
+-                                                      itsUserPassword, cipher);
++
++                // CHNAGED: itsUserPassword is disabled.
++                //          Storing the password in String object or member variable is insecure practices.
++
++                //itsSavedPasswordsMgr.addSavedPassword(getPasswdFileUri(),
++                //                                      itsUserPassword, cipher);
+                 finish(SavedPasswordFinish.SUCCESS,
+                        getString(R.string.password_saved));
+             } catch (Exception e) {
+diff -urN ../passwdsafe-6.16.1_original/passwdsafe/src/main/java/edu/rice/seclab/keyexport/PBKDF2KeyExporter.java passwdsafe/src/main/java/edu/rice/seclab/keyexport/PBKDF2KeyExporter.java
+--- ../passwdsafe-6.16.1_original/passwdsafe/src/main/java/edu/rice/seclab/keyexport/PBKDF2KeyExporter.java	1969-12-31 18:00:00.000000000 -0600
++++ passwdsafe/src/main/java/edu/rice/seclab/keyexport/PBKDF2KeyExporter.java	2018-12-14 14:57:14.374791772 -0600
+@@ -0,0 +1,268 @@
++/**
++ *
++ * The prototype of KeyExporter APIs.
++ *
++ * WARNING: This implementation is experimental and shows the prototype of our concept.
++ * Thus, it provides the functionality in the basic scenario without error handling.
++ * In order to use for real cryptographic purposes beyond testing,
++ * additional engineer effort will be required such as supporting various parameters,
++ * and error handling.
++ *
++ *
++ *   Copyright (c) 2018,
++ *     Jaeho Lee <jaeho.lee@rice.edu>
++ *     Ang Chen <angchen@rice.edu>
++ *     Dan S. Wallach <dwallach@rice.edu>
++ *   All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted under the terms of the GNU Lesser General
++ * Public License as published by the Free Software Foundation,
++ * either version 3 of the License, or (at your option) any later version.
++ *
++ * It is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU Lesser General Public License for more details.
++ *
++ */
++
++package edu.rice.seclab.keyexport;
++
++import android.widget.EditText;
++
++import java.math.BigInteger;
++import java.security.NoSuchAlgorithmException;
++import java.security.SecureRandom;
++import java.security.spec.InvalidKeySpecException;
++import java.util.Arrays;
++
++import javax.crypto.SecretKeyFactory;
++import javax.crypto.spec.PBEKeySpec;
++
++/**
++ * KeyExporter prototype for PBKDF2
++ *
++ *
++ */
++public class PBKDF2KeyExporter {
++
++    private String derivedKey = null;
++    private EditText passwordEditText;
++    private EditText passwordConfirmEditText;
++    private char [] tempPassword;
++    SecureRandom random = new SecureRandom();
++
++    // Default salt
++    byte[] defalutSalt = new byte [] {'s', 'a', 'l', 't'};
++
++    /**
++     * TODO: iterations number is fixed in this code.
++     * For the real usage, this value can be configurable.
++     */
++    static final int iterations = 1000;
++
++    /**
++     * Wrapping the password widget with KeyExporter
++     *
++     * @param passwordWidget
++     */
++    public void bind(EditText passwordWidget) {
++        // TODO: Check etUsername
++        passwordEditText = passwordWidget;
++    }
++
++
++    /**
++     * Wrapping two password widgets with KeyExporter
++     * This is for registration step where UI has two password inputs for confirmation.
++     * TODO: This feature is not tested.
++     *
++     * @param passwordWidget
++     * @param passwordWidget2
++     */
++    public void bind(EditText passwordWidget, EditText passwordWidget2) {
++        passwordEditText = passwordWidget;
++        passwordConfirmEditText = passwordWidget2;
++    }
++
++    /**
++     * Initialize KeyExporter with the default salt.
++     *
++     * It generates the hash value of <iterations + ":" + salt + ":" + hash>
++     * After that, it cleans up the password.
++     *
++     * TODO: It only supports specific string type of PBKDF2 hash for experimental purpose.
++     * For real, it should be implemented generally to support different types.
++     */
++    public void init() {
++
++        tempPassword = new char[passwordEditText.getText().length()];
++        for (int i = 0; i < passwordEditText.getText().length(); i++) {
++            tempPassword[i] = (passwordEditText.getText().charAt(i));
++        }
++
++        try {
++
++            PBEKeySpec spec = new PBEKeySpec(tempPassword, defalutSalt, iterations, 64 * 8);
++            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
++            byte[] hash = skf.generateSecret(spec).getEncoded();
++            spec.clearPassword();
++            derivedKey = iterations + ":" + toHex(defalutSalt) + ":" + toHex(hash);
++        } catch (Exception e){
++            e.printStackTrace();
++        }
++
++        // Clean up password
++        passwordEditText.getText().clear();
++        passwordEditText.setText("");
++
++        if (passwordConfirmEditText != null){
++            passwordConfirmEditText.getText().clear();
++            passwordConfirmEditText.setText("");
++        }
++
++        // Three way overwriting
++        Arrays.fill(tempPassword, (char) 0xA5A5);
++        Arrays.fill(tempPassword, (char) 0x5A5A);
++        Arrays.fill(tempPassword, (char) 0);
++        for (int i = 0; i < tempPassword.length; i++) {
++            tempPassword[i] = (char) random.nextInt();      // prevent optimization
++        }
++    }
++
++    /**
++     * Initialize KeyExporter with a salt.
++     * It generates the hash value of <iterations + ":" + salt + ":" + hash>
++     * After that, it cleans up the password.
++     *
++     * TODO: It only supports specific string type of PBKDF2 hash for experimental purpose.
++     * For real, it should be implemented generally to support different cases.
++     *
++     * @param salt
++     */
++    public void initWithSalt(byte [] salt) {
++
++        tempPassword = new char[passwordEditText.getText().length()];
++        for (int i = 0; i < passwordEditText.getText().length(); i++) {
++            tempPassword[i] = (passwordEditText.getText().charAt(i));
++        }
++
++        try {
++            PBEKeySpec spec = new PBEKeySpec(tempPassword, salt, iterations, 64 * 8);
++            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
++            byte[] hash = skf.generateSecret(spec).getEncoded();
++            derivedKey = iterations + ":" + toHex(salt) + ":" + toHex(hash);
++        } catch (Exception e){
++            e.printStackTrace();
++        }
++
++        // Clean up password
++        passwordEditText.getText().clear();
++        passwordEditText.setText("");
++
++        if (passwordConfirmEditText != null){
++            passwordConfirmEditText.getText().clear();
++            passwordConfirmEditText.setText("");
++        }
++
++        // Three way overwriting
++        Arrays.fill(tempPassword, (char) 0xA5A5);
++        Arrays.fill(tempPassword, (char) 0x5A5A);
++        Arrays.fill(tempPassword, (char) 0);
++        for (int i = 0; i < tempPassword.length; i++) {
++            tempPassword[i] = (char) random.nextInt();      // prevent optimization
++        }
++    }
++
++    /**
++     * Return hash value as String
++     *
++     * @return hash value
++     */
++    public CharSequence getKey() {
++        return derivedKey;
++    }
++
++
++    /**
++     * Utility method. return random salt value for SHA1PRNG
++     *
++     * @return Random salt
++     * @throws NoSuchAlgorithmException
++     */
++    public static byte[] getSalt() throws NoSuchAlgorithmException
++    {
++        SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
++        byte[] salt = new byte[16];
++        sr.nextBytes(salt);
++        return salt;
++    }
++
++    /**
++     * Utility method. byte array to String
++     * TODO: This method should be depreciated in the future to avoid String usage
++     *
++     * @param array
++     * @return
++     */
++    private static String toHex(byte[] array)
++    {
++        BigInteger bi = new BigInteger(1, array);
++        String hex = bi.toString(16);
++        int paddingLength = (array.length * 2) - hex.length();
++        if(paddingLength > 0)
++        {
++            return String.format("%0"  +paddingLength + "d", 0) + hex;
++        }else{
++            return hex;
++        }
++    }
++
++    /**
++     * Utility method.
++     *
++     * @param hex
++     * @return
++     */
++    private static byte[] fromHex(String hex)
++    {
++        byte[] bytes = new byte[hex.length() / 2];
++        for(int i = 0; i<bytes.length ;i++)
++        {
++            bytes[i] = (byte)Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
++        }
++        return bytes;
++    }
++
++    /**
++     * Utility method. To validate password.
++     * TODO: This method is not tested
++     *
++     * @param originalPassword
++     * @param storedPassword
++     * @return
++     * @throws NoSuchAlgorithmException
++     * @throws InvalidKeySpecException
++     */
++    private static boolean validatePassword(String originalPassword, String storedPassword) throws NoSuchAlgorithmException, InvalidKeySpecException
++    {
++        String[] parts = storedPassword.split(":");
++        int iterations = Integer.parseInt(parts[0]);
++        byte[] salt = fromHex(parts[1]);
++        byte[] hash = fromHex(parts[2]);
++
++        PBEKeySpec spec = new PBEKeySpec(originalPassword.toCharArray(), salt, iterations, hash.length * 8);
++        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
++        byte[] testHash = skf.generateSecret(spec).getEncoded();
++
++        int diff = hash.length ^ testHash.length;
++        for(int i = 0; i < hash.length && i < testHash.length; i++)
++        {
++            diff |= hash[i] ^ testHash[i];
++        }
++        return diff == 0;
++    }
++
++
++}
