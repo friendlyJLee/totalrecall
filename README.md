@@ -14,6 +14,8 @@ e.g., [Google Nexus 5X Bootloader Unauthorized Memory Dumping via USB](https://a
 
 <img src="https://user-images.githubusercontent.com/14894590/53221341-9522eb80-362e-11e9-9339-63ea19412128.png" width=300>
 
+### Problem
+
 However, the password retention in memory is widespread in Android, and password strings are easily recognizable from memory dump. The lack of support in the Android framework and developers' various mistakes cause this retention problem.
 
 <img src="https://user-images.githubusercontent.com/14894590/53221735-59892100-3630-11e9-8b87-5ae9d72371a5.png" height=55><img src="https://user-images.githubusercontent.com/14894590/53221757-74f42c00-3630-11e9-8ed5-d6b375100879.png" height=55>
