@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:background="@drawable/an"
+android:orientation="vertical" >
+
+
+<RelativeLayout
+android:layout_width="match_parent"
+android:layout_height="wrap_content" >
+
+
+<TextView
+android:id="@+id/textView1"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:layout_alignBaseline="@+id/edittext1"
+android:layout_alignBottom="@+id/edittext1"
+android:layout_alignParentLeft="true"
+android:text="@string/text"
+android:textAppearance="?android:attr/textAppearanceLarge" />
+
+
+
+
+
+<TextView
+android:id="@+id/textV"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:layout_alignParentLeft="true"
+android:layout_centerVertical="true"
+android:layout_marginLeft="100dp"
+
+android:textAppearance="?android:attr/textAppearanceLarge" />
+
+
+</RelativeLayout>
+
+
+<Button
+android:id="@+id/buttonSearch"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:onClick="search"
+android:text="View Details" />
+
+
+
+
+
+<ListView
+android:id="@android:id/list"
+android:layout_width="wrap_content"
+android:layout_height="242dp"
+android:layout_weight="0.72" >
+</ListView>
+
+
+</LinearLayout>
+

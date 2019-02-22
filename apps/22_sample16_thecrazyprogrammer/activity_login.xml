@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:paddingBottom="20dp"
+android:paddingLeft="20dp"
+android:paddingRight="20dp"
+android:paddingTop="20dp"
+tools:context="com.loginandregister.Login"
+android:orientation="vertical"
+android:gravity="center">
+
+<EditText
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:hint="Email"
+android:id="@+id/emailBox"/>
+
+<EditText
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:hint="Password"
+android:id="@+id/passwordBox"
+android:layout_marginTop="10dp"/>
+
+<Button
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:text="Login"
+android:id="@+id/loginButton"
+android:layout_marginTop="10dp"/>
+
+<TextView
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:text="Click here to register"
+android:textSize="20dp"
+android:layout_marginTop="15dp"
+android:gravity="center"
+android:id="@+id/registerLink"
+android:textColor="#0D47A1"/>
+</LinearLayout>

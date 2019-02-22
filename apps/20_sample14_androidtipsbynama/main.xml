@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="fill_parent"
+android:layout_height="fill_parent"
+android:orientation="vertical" >
+
+
+<TextView
+android:id="@+id/Luname"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:text="User Name"
+
+android:layout_marginLeft="5dp"
+android:layout_marginRight="5dp"
+android:textAppearance="?android:attr/textAppearanceLarge" />
+
+
+<EditText
+android:id="@+id/Ledituname"
+
+android:layout_width="match_parent"
+android:layout_height="wrap_content" 
+android:singleLine="true"
+android:layout_marginLeft="5dp"
+android:layout_marginRight="5dp">
+
+
+<requestFocus />
+</EditText>
+
+
+<TextView
+android:id="@+id/Lpass"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:text="Password"
+android:layout_marginLeft="5dp"
+android:layout_marginRight="5dp"
+android:textAppearance="?android:attr/textAppearanceLarge" />
+
+
+<EditText
+android:id="@+id/Leditpw"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:inputType="textPassword" 
+android:layout_marginLeft="5dp"
+android:layout_marginRight="5dp"/>
+
+
+<RelativeLayout
+android:id="@+id/relativeLayout1"
+android:layout_width="match_parent"
+android:layout_height="wrap_content" >
+
+<Button
+android:id="@+id/login"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:layout_marginLeft="5dp"
+android:layout_marginRight="5dp"
+android:text="Login" />
+
+
+
+
+<Button
+android:id="@+id/register"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:text="Register" 
+android:layout_toRightOf="@id/login"/>
+
+</RelativeLayout>
+
+
+
+
+</LinearLayout>

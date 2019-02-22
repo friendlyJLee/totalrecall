@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_dashboard"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF5722"
+    android:padding="5dp"
+    tools:context="com.androidjson.userloginreg_androidjsoncom.DashboardActivity">
+
+    <TextView
+        android:text="SuccessFully Logged In, Your Email =  "
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="150dp"
+        android:id="@+id/textView"
+        android:textColor="#ffffff"
+        android:textSize="30dp"
+        android:gravity="center"
+        />
+
+    <TextView
+        android:text=""
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/EmailShow"
+        android:textColor="#ffffff"
+        android:textSize="30dp"
+        android:gravity="center"
+        android:layout_below="@+id/textView"/>
+
+    <Button
+        android:layout_marginTop="30dp"
+        android:layout_width="fill_parent"
+        android:layout_below="@+id/EmailShow"
+        android:layout_height="wrap_content"
+        android:id="@+id/button"
+        android:text="Logout"/>
+
+</RelativeLayout>

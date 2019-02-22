@@ -1,0 +1,74 @@
+/*
+ * Copyright (©) 2017 Jeff Harris <jefftharris@gmail.com>
+ * All rights reserved. Use of the code is allowed under the
+ * Artistic License 2.0 terms, as specified in the LICENSE file
+ * distributed with this code, or available from
+ * http://www.opensource.org/licenses/artistic-license-2.0.php
+ */
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
+    defaultConfig {
+        applicationId "com.jefftharris.passwdsafe.sync"
+        minSdkVersion 14
+        resConfigs "de", "fr", "nb"
+        targetSdkVersion 27
+        // <major><minor><bugfix><beta/extra>
+        versionCode 3050200
+        versionName "3.5.2"
+        vectorDrawables.useSupportLibrary = true
+    }
+    buildTypes {
+        debug {
+            debuggable true
+            minifyEnabled true
+            //noinspection GroovyAssignabilityCheck
+            proguardFiles getDefaultProguardFile('proguard-android.txt')
+            proguardFiles += 'proguard-rules.pro'
+            proguardFiles += 'proguard-google-api-client.pro'
+        }
+        release {
+            minifyEnabled true
+            //noinspection GroovyAssignabilityCheck
+            proguardFiles getDefaultProguardFile('proguard-android.txt')
+            proguardFiles += 'proguard-rules.pro'
+            proguardFiles += 'proguard-google-api-client.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    productFlavors {
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(':lib')
+    implementation project(':lib-owncloud')
+    implementation project(':lib-onedrive:authenticate')
+    implementation project(':lib-onedrive:onedriveaccess')
+    implementation project(':lib-onedrive')
+    implementation 'com.google.android.gms:play-services-auth:11.6.2'
+    // Google Drive
+    implementation('com.google.api-client:google-api-client-android:1.22.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation('com.google.apis:google-api-services-drive:v3-rev58-1.22.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    // Dropbox
+    implementation 'com.dropbox.core:dropbox-core-sdk:3.0.3'
+    // Box
+    implementation 'com.box:box-android-sdk:4.0.10'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+}

@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{53A9CB7F-6553-4BC0-B56B-9410BB2E59AA}</ProjectGuid>
+    <ProjectTypeGuids>{EFBA0AD7-5A72-4C68-AF49-83D382785DCF};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>keepass2android</RootNamespace>
+    <AssemblyName>Kp2aBusinessLogic</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+    <AndroidResgenFile>Resources\Resource.Designer.cs</AndroidResgenFile>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <TargetFrameworkVersion>v8.1</TargetFrameworkVersion>
+    <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
+    <NuGetPackageImportStamp>06ffb71c</NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;EXCLUDE_TWOFISH;_EXCLUDE_KEYBOARD;_EXCLUDE_FILECHOOSER;_EXCLUDE_JAVAFILESTORAGE;INCLUDE_KEYTRANSFORM</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AndroidLinkMode>None</AndroidLinkMode>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseNoNet|AnyCPU'">
+    <OutputPath>bin\ReleaseNoNet\</OutputPath>
+    <DefineConstants>TRACE;NoNet;EXCLUDE_JAVAFILESTORAGE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Mono.Android" />
+    <Reference Include="Mono.Security" />
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="database\CheckDatabaseForChanges.cs" />
+    <Compile Include="database\edit\AddTemplateEntries.cs" />
+    <Compile Include="database\edit\CopyEntry.cs" />
+    <Compile Include="database\edit\DeleteMultipleItems.cs" />
+    <Compile Include="database\edit\EditGroup.cs" />
+    <Compile Include="database\edit\MoveElements.cs" />
+    <Compile Include="database\KdbDatabaseFormat.cs" />
+    <Compile Include="database\KdbxDatabaseFormat.cs" />
+    <Compile Include="database\PwEntryOutput.cs" />
+    <Compile Include="database\SynchronizeCachedDatabase.cs" />
+    <Compile Include="DataExchange\FileFormatProvider.cs" />
+    <Compile Include="DataExchange\Formats\KeePassCsv1x.cs" />
+    <Compile Include="DataExchange\Formats\KeePassKdb2x.cs" />
+    <Compile Include="DataExchange\Formats\KeePassXml2x.cs" />
+    <Compile Include="DataExchange\PwExportInfo.cs" />
+    <Compile Include="Io\AndroidContentStorage.cs" />
+    <Compile Include="Io\BuiltInFileStorage.cs" />
+    <Compile Include="Io\CachingFileStorage.cs" />
+    <Compile Include="Io\DropboxFileStorage.cs" />
+    <Compile Include="Io\DropboxFileStorageKeys.cs" />
+    <Compile Include="Io\FileDescription.cs" />
+    <Compile Include="Io\FileStorageSetupActivity.cs" />
+    <Compile Include="Io\FileStorageSetupInitiatorActivity.cs" />
+    <Compile Include="Io\GDriveFileStorage.cs" />
+    <Compile Include="Io\IFileStorage.cs" />
+    <Compile Include="Io\IoUtil.cs" />
+    <Compile Include="Io\JavaFileStorage.cs" />
+    <Compile Include="Io\NetFtpFileStorage.cs" />
+    <Compile Include="Io\OfflineSwitchableFileStorage.cs" />
+    <Compile Include="Io\SftpFileStorage.cs" />
+    <Compile Include="Io\OneDriveFileStorage.cs" />
+    <Compile Include="Io\WebDavFileStorage.cs" />
+    <Compile Include="IProgressDialog.cs" />
+    <Compile Include="PreferenceKey.cs" />
+    <Compile Include="SelectStorageLocationActivityBase.cs" />
+    <Compile Include="UiStringKey.cs" />
+    <Compile Include="database\Database.cs" />
+    <Compile Include="database\edit\ActionOnFinish.cs" />
+    <Compile Include="database\edit\AddEntry.cs" />
+    <Compile Include="database\edit\AddGroup.cs" />
+    <Compile Include="database\edit\CreateDb.cs" />
+    <Compile Include="database\edit\DeleteEntry.cs" />
+    <Compile Include="database\edit\DeleteGroup.cs" />
+    <Compile Include="database\edit\DeleteRunnable.cs" />
+    <Compile Include="database\edit\FileOnFinish.cs" />
+    <Compile Include="database\edit\LoadDb.cs" />
+    <Compile Include="database\edit\OnFinish.cs" />
+    <Compile Include="database\edit\RunnableOnFinish.cs" />
+    <Compile Include="database\edit\SaveDb.cs" />
+    <Compile Include="database\edit\SetPassword.cs" />
+    <Compile Include="database\edit\UpdateEntry.cs" />
+    <Compile Include="IKp2aApp.cs" />
+    <Compile Include="IDrawableFactory.cs" />
+    <Compile Include="KeyFileException.cs" />
+    <Compile Include="ProgressTask.cs" />
+    <Compile Include="PwGroupEqualityFromIdComparer.cs" />
+    <Compile Include="PwUuidEqualityComparer.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SearchDbHelper.cs" />
+    <Compile Include="ProgressDialogStatusLogger.cs" />
+    <Compile Include="Utils\EntryUtil.cs" />
+    <Compile Include="Utils\Spr\SprContext.cs" />
+    <Compile Include="Utils\Spr\SprEncoding.cs" />
+    <Compile Include="Utils\Spr\SprEngine.cs" />
+    <Compile Include="Utils\Spr\SprEngine.PickChars.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\JavaFileStorageBindings\JavaFileStorageBindings.csproj">
+      <Project>{48574278-4779-4b3a-a9e4-9cf1bc285d0b}</Project>
+      <Name>JavaFileStorageBindings</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\KeePassLib2Android\KeePassLib2Android.csproj">
+      <Project>{545B4A6B-8BBA-4FBE-92FC-4AC060122A54}</Project>
+      <Name>KeePassLib2Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\KP2AKdbLibraryBinding\KP2AKdbLibraryBinding.csproj">
+      <Project>{70D3844A-D9FA-4A64-B205-A84C6A822196}</Project>
+      <Name>KP2AKdbLibraryBinding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\netftpandroid\System.Net.FtpClient\System.Net.FtpClient.Android.csproj">
+      <Project>{146FD497-BA03-4740-B6C5-5C84EA8FCDE2}</Project>
+      <Name>System.Net.FtpClient.Android</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TwofishCipher\TwofishCipher.csproj">
+      <Project>{5CF675A5-9BEE-4720-BED9-D5BF14A2EBF9}</Project>
+      <Name>TwofishCipher</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
