@@ -22,7 +22,7 @@ However, the password retention in memory is widespread in Android, and password
 
 ### Solutions
 
-We offer two solutions 
+We offer two solutions: 
 * **SecureTextView**: a secure version of Android TextView that can eliminate password retention in the Android framework.
 * **KeyExporter**: a simple abstraction for accessing passwords that helps developers follows stronger cryptographic practices to prevent password misuse.
 
