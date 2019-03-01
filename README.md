@@ -4,7 +4,7 @@ This repository contains code for the following research.
 
 ## Publication
 
-"**Total Recall: Persistence of Passwords in Android**," Jaeho Lee, Ang Chen and Dan S. Wallach, *The 26th Network and Distributed System Security Symposium (NDSS '19)*, San Diego, CA, USA, February 2019 [[PDF]](https://www.cs.rice.edu/~jl128/papers/ndss19-total_recall_jaeho_ang_dan.pdf) [[BibTex]](https://www.cs.rice.edu/~jl128/bibtex/ndss19.html)
+"**Total Recall: Persistence of Passwords in Android**," Jaeho Lee, Ang Chen and Dan S. Wallach, *The 26th Network and Distributed System Security Symposium (NDSS '19)*, San Diego, CA, USA, February 2019 [[PDF]](https://www.cs.rice.edu/~jl128/papers/ndss19-total_recall_jaeho_ang_dan.pdf) [[Slides]](https://www.cs.rice.edu/~jl128/data/ndss19-slides-total_recall.pdf) [[Slides_pptx]](https://www.cs.rice.edu/~jl128/data/ndss19-slides-total_recall.pptx) [[BibTex]](https://www.cs.rice.edu/~jl128/bibtex/ndss19.html)
 
 ### Motivation
 
